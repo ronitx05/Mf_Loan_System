@@ -1,6 +1,11 @@
 package org.ncu.mf_loan_system.entities;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -8,22 +13,29 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "payments")
 public class Payment {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonIgnore  // Optional: Hide in JSON response
     private Long id;
 
+    @NotNull(message = "Amount is required")
+    @Positive(message = "Amount must be greater than 0")
     @Column(nullable = false)
     private BigDecimal amount;
 
+    @NotNull(message = "Payment date is required")
+    @PastOrPresent(message = "Payment date cannot be in the future")
+    @JsonFormat(pattern = "yyyy-MM-dd")  // For consistent JSON format
     @Column(nullable = false)
     private LocalDate paymentDate;
 
+    @NotNull(message = "Loan reference is required")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_id", nullable = false)
     private Loan loan;
 
-    // Constructors, getters, setters
-
+    // Getters and setters
 
     public Long getId() {
         return id;
@@ -63,7 +75,7 @@ public class Payment {
                 "id=" + id +
                 ", amount=" + amount +
                 ", paymentDate=" + paymentDate +
-                ", loan=" + loan +
+                ", loan=" + (loan != null ? loan.getId() : null) +
                 '}';
     }
 }

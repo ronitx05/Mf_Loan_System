@@ -3,6 +3,7 @@ package org.ncu.mf_loan_system.service;
 import org.ncu.mf_loan_system.entities.Loan;
 import org.ncu.mf_loan_system.repository.LoanRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
@@ -15,22 +16,26 @@ public class LoanServiceImpl implements LoanService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Loan> getAllLoans() {
         return loanRepository.findAll();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Loan getLoanById(Long id) {
         return loanRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Loan not found with id: " + id));
     }
 
     @Override
+    @Transactional
     public Loan createLoan(Loan loan) {
         return loanRepository.save(loan);
     }
 
     @Override
+    @Transactional
     public Loan updateLoan(Long id, Loan loan) {
         Loan existing = getLoanById(id);
         existing.setPrincipalAmount(loan.getPrincipalAmount());
@@ -41,6 +46,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
     @Override
+    @Transactional
     public void deleteLoan(Long id) {
         Loan loan = getLoanById(id);
         loanRepository.delete(loan);
