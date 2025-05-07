@@ -1,11 +1,8 @@
 package org.ncu.mf_loan_system.entities;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-
+import com.fasterxml.jackson.annotation.JsonFormat;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -44,7 +41,7 @@ public class Loan {
     private LocalDate nextPaymentDate;
 
     @Enumerated(EnumType.STRING)
-    private LoanStatus status = LoanStatus.ACTIVE;
+    private LoanStatus status = LoanStatus.ACTIVE; // Default status
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", nullable = false)
@@ -53,27 +50,6 @@ public class Loan {
 
     @OneToMany(mappedBy = "loan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments = new ArrayList<>();
-
-    // Required by JPA
-    public Loan() {}
-
-    // Constructor for JSON deserialization
-    @JsonCreator
-    public Loan(
-            @JsonProperty("principalAmount") double principalAmount,
-            @JsonProperty("interestRate") double interestRate,
-            @JsonProperty("startDate") LocalDate startDate,
-            @JsonProperty("endDate") LocalDate endDate,
-            @JsonProperty("client") Client client
-    ) {
-        this.principalAmount = BigDecimal.valueOf(principalAmount);
-        this.interestRate = BigDecimal.valueOf(interestRate);
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.client = client;
-        this.status = LoanStatus.ACTIVE;
-        this.nextPaymentDate = startDate != null ? startDate.plusMonths(1) : null;
-    }
 
     // Calculate EMI (Equated Monthly Installment)
     public BigDecimal calculateEMI() {
@@ -85,35 +61,80 @@ public class Loan {
                 .divide(factor.subtract(BigDecimal.ONE), 2, BigDecimal.ROUND_HALF_UP);
     }
 
+    // Getters/Setters (unchanged, keep existing)
     public enum LoanStatus { ACTIVE, PAID, OVERDUE, DEFAULTED }
 
-    // Getters and setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public BigDecimal getPrincipalAmount() { return principalAmount; }
-    public void setPrincipalAmount(BigDecimal principalAmount) { this.principalAmount = principalAmount; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public BigDecimal getInterestRate() { return interestRate; }
-    public void setInterestRate(BigDecimal interestRate) { this.interestRate = interestRate; }
+    public BigDecimal getPrincipalAmount() {
+        return principalAmount;
+    }
 
-    public LocalDate getStartDate() { return startDate; }
-    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public void setPrincipalAmount(BigDecimal principalAmount) {
+        this.principalAmount = principalAmount;
+    }
 
-    public LocalDate getEndDate() { return endDate; }
-    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public BigDecimal getInterestRate() {
+        return interestRate;
+    }
 
-    public LocalDate getNextPaymentDate() { return nextPaymentDate; }
-    public void setNextPaymentDate(LocalDate nextPaymentDate) { this.nextPaymentDate = nextPaymentDate; }
+    public void setInterestRate(BigDecimal interestRate) {
+        this.interestRate = interestRate;
+    }
 
-    public LoanStatus getStatus() { return status; }
-    public void setStatus(LoanStatus status) { this.status = status; }
+    public LocalDate getStartDate() {
+        return startDate;
+    }
 
-    public Client getClient() { return client; }
-    public void setClient(Client client) { this.client = client; }
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
 
-    public List<Payment> getPayments() { return payments; }
-    public void setPayments(List<Payment> payments) { this.payments = payments; }
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public LocalDate getNextPaymentDate() {
+        return nextPaymentDate;
+    }
+
+    public void setNextPaymentDate(LocalDate nextPaymentDate) {
+        this.nextPaymentDate = nextPaymentDate;
+    }
+
+    public LoanStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(LoanStatus status) {
+        this.status = status;
+    }
+
+    public Client getClient() {
+        return client;
+    }
+
+    public void setClient(Client client) {
+        this.client = client;
+    }
+
+    public List<Payment> getPayments() {
+        return payments;
+    }
+
+    public void setPayments(List<Payment> payments) {
+        this.payments = payments;
+    }
 
     @Override
     public String toString() {

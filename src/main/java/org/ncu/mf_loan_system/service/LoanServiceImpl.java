@@ -2,12 +2,10 @@ package org.ncu.mf_loan_system.service;
 
 import org.ncu.mf_loan_system.entities.Loan;
 import org.ncu.mf_loan_system.entities.Payment;
-import org.ncu.mf_loan_system.exception.InvalidLoanException;
-import org.ncu.mf_loan_system.exception.ResourceNotFoundException;
-import org.ncu.mf_loan_system.repository.ClientRepository;
 import org.ncu.mf_loan_system.repository.LoanRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -15,46 +13,10 @@ import java.util.List;
 public class LoanServiceImpl implements LoanService {
 
     private final LoanRepository loanRepository;
-    private final ClientRepository clientRepository;
 
-    public LoanServiceImpl(LoanRepository loanRepository, ClientRepository clientRepository) {
+    public LoanServiceImpl(LoanRepository loanRepository) {
         this.loanRepository = loanRepository;
-        this.clientRepository = clientRepository;
     }
-
-    @Override
-    @Transactional
-    public Loan createLoan(Loan loan) {
-        // Validate client exists
-        Long clientId = loan.getClient().getId();
-        clientRepository.findById(clientId)
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found with id: " + clientId));
-
-        // Set default next payment date (1 month from start)
-        loan.setNextPaymentDate(loan.getStartDate().plusMonths(1));
-
-        // Validate end date is after start date
-        if (loan.getEndDate().isBefore(loan.getStartDate())) {
-            throw new InvalidLoanException("End date must be after start date");
-        }
-
-        return loanRepository.save(loan);
-    }
-
-    @Override
-    public BigDecimal getTotalOutstandingAmount() {
-        return loanRepository.findAll().stream()
-                .map(this::calculateOutstanding)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private BigDecimal calculateOutstanding(Loan loan) {
-        BigDecimal totalPaid = loan.getPayments().stream()
-                .map(Payment::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        return loan.getPrincipalAmount().subtract(totalPaid);
-    }
-
 
     @Override
     @Transactional(readOnly = true)
@@ -69,6 +31,11 @@ public class LoanServiceImpl implements LoanService {
                 .orElseThrow(() -> new RuntimeException("Loan not found with id: " + id));
     }
 
+    @Override
+    @Transactional
+    public Loan createLoan(Loan loan) {
+        return loanRepository.save(loan);
+    }
 
     @Override
     @Transactional
@@ -89,4 +56,20 @@ public class LoanServiceImpl implements LoanService {
     }
 
 
+    @Override
+    public BigDecimal getTotalOutstandingAmount() {
+        List<Loan> allLoans = loanRepository.findAll();
+        BigDecimal totalOutstanding = BigDecimal.ZERO;
+
+        for (Loan loan : allLoans) {
+            BigDecimal loanAmount = loan.getPrincipalAmount(); // assuming full amount is pending
+            BigDecimal paidAmount = loan.getPayments().stream()
+                    .map(Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal outstanding = loanAmount.subtract(paidAmount);
+            totalOutstanding = totalOutstanding.add(outstanding);
+        }
+
+        return totalOutstanding;
+    }
 }
