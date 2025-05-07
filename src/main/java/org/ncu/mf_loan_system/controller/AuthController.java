@@ -11,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,14 +59,20 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Error: Username is already taken!");
         }
 
+        // Create new user
         User user = new User();
         user.setUsername(signUpRequest.getUsername());
         user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
 
+        // Assign role
         Role userRole = roleRepository.findByName(Role.LOAN_OFFICER)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-        user.setRoles(Set.of(userRole));
+                .orElseGet(() -> {
+                    Role newRole = new Role();
+                    newRole.setName(Role.LOAN_OFFICER);
+                    return roleRepository.save(newRole);
+                });
 
+        user.setRoles(Set.of(userRole));
         userRepository.save(user);
 
         return ResponseEntity.ok("User registered successfully!");
