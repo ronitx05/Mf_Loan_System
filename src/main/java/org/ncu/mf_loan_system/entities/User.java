@@ -87,5 +87,4 @@ public class User implements UserDetails {
         this.id = id;
     }
 
-
 }
