@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/payments")
-@PreAuthorize("isAuthenticated()") // Base security for all endpoints
+@PreAuthorize("isAuthenticated()")
 public class PaymentController {
 
     private final PaymentService paymentService;

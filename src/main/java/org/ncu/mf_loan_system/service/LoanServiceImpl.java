@@ -1,15 +1,15 @@
 package org.ncu.mf_loan_system.service;
 
-import org.ncu.mf_loan_system.entities.Loan;
-import org.ncu.mf_loan_system.entities.Payment;
+import org.ncu.mf_loan_system.entities.*;
 import org.ncu.mf_loan_system.repository.LoanRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@Transactional
 public class LoanServiceImpl implements LoanService {
 
     private final LoanRepository loanRepository;
@@ -27,18 +27,21 @@ public class LoanServiceImpl implements LoanService {
     @Override
     @Transactional(readOnly = true)
     public Loan getLoanById(Long id) {
-        return loanRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Loan not found with id: " + id));
+        Loan loan = loanRepository.findById(id).orElse(null);
+        if (loan == null) {
+            throw new RuntimeException("Loan not found with id: " + id);
+        }
+        return loan;
     }
 
     @Override
-    @Transactional
     public Loan createLoan(Loan loan) {
+        loan.setStatus(Loan.LoanStatus.ACTIVE);
+        loan.setNextPaymentDate(loan.getStartDate().plusMonths(1));
         return loanRepository.save(loan);
     }
 
     @Override
-    @Transactional
     public Loan updateLoan(Long id, Loan loan) {
         Loan existing = getLoanById(id);
         existing.setPrincipalAmount(loan.getPrincipalAmount());
@@ -49,27 +52,46 @@ public class LoanServiceImpl implements LoanService {
     }
 
     @Override
-    @Transactional
     public void deleteLoan(Long id) {
         Loan loan = getLoanById(id);
         loanRepository.delete(loan);
     }
 
-
     @Override
+    @Transactional(readOnly = true)
     public BigDecimal getTotalOutstandingAmount() {
         List<Loan> allLoans = loanRepository.findAll();
         BigDecimal totalOutstanding = BigDecimal.ZERO;
 
         for (Loan loan : allLoans) {
-            BigDecimal loanAmount = loan.getPrincipalAmount(); // assuming full amount is pending
-            BigDecimal paidAmount = loan.getPayments().stream()
-                    .map(Payment::getAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal loanAmount = loan.getPrincipalAmount();
+            BigDecimal paidAmount = BigDecimal.ZERO;
+
+            for (Payment payment : loan.getPayments()) {
+                paidAmount = paidAmount.add(payment.getAmount());
+            }
+
             BigDecimal outstanding = loanAmount.subtract(paidAmount);
             totalOutstanding = totalOutstanding.add(outstanding);
         }
 
         return totalOutstanding;
+    }
+
+    @Override
+    public BigDecimal calculateEMI(Long loanId) {
+        Loan loan = getLoanById(loanId);
+        return loan.calculateEMI();
+    }
+
+    @Override
+    public void processPayment(Long loanId, BigDecimal amount) {
+        Loan loan = getLoanById(loanId);
+        Payment payment = new Payment();
+        payment.setAmount(amount);
+        payment.setPaymentDate(LocalDate.now());
+        payment.setLoan(loan);
+        loan.addPayment(payment);
+        loanRepository.save(loan);
     }
 }

@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/loans")
-@PreAuthorize("isAuthenticated()") // Base security for all endpoints
+@PreAuthorize("isAuthenticated()")
 public class LoanController {
 
     private final LoanService loanService;
@@ -55,5 +55,20 @@ public class LoanController {
     @PreAuthorize("hasAnyRole('MANAGER', 'AUDITOR')")
     public ResponseEntity<BigDecimal> getTotalOutstanding() {
         return ResponseEntity.ok(loanService.getTotalOutstandingAmount());
+    }
+
+    @GetMapping("/{id}/emi")
+    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
+    public ResponseEntity<BigDecimal> calculateLoanEMI(@PathVariable Long id) {
+        return ResponseEntity.ok(loanService.calculateEMI(id));
+    }
+
+    @PostMapping("/{id}/payments")
+    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
+    public ResponseEntity<Void> processPayment(
+            @PathVariable Long id,
+            @RequestParam BigDecimal amount) {
+        loanService.processPayment(id, amount);
+        return ResponseEntity.ok().build();
     }
 }
