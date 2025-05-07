@@ -1,10 +1,8 @@
 package org.ncu.mf_loan_system.entities;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,34 +18,51 @@ public class Loan {
 
     @Column(nullable = false)
     @Positive(message = "Principal amount must be positive")
+    @Digits(integer = 10, fraction = 2, message = "Amount must have up to 2 decimal places")
     private BigDecimal principalAmount;
 
     @Column(nullable = false)
     @Positive(message = "Interest rate must be positive")
+    @DecimalMax(value = "100.0", message = "Interest rate cannot exceed 100%")
     private BigDecimal interestRate;
 
     @Column(nullable = false)
     @PastOrPresent(message = "Start date cannot be in the future")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate startDate;
 
     @Column(nullable = false)
+    @Future(message = "End date must be in the future")
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
 
     @Column
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate paymentDate;  // Renamed for clarity
+    private LocalDate nextPaymentDate;
 
     @Enumerated(EnumType.STRING)
-    private LoanStatus status;
+    private LoanStatus status = LoanStatus.ACTIVE; // Default status
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id", nullable = false)
+    @NotNull(message = "Client is required")
     private Client client;
 
     @OneToMany(mappedBy = "loan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payments = new ArrayList<>();
 
-    // Constructors, getters, setters
+    // Calculate EMI (Equated Monthly Installment)
+    public BigDecimal calculateEMI() {
+        BigDecimal monthlyRate = interestRate.divide(BigDecimal.valueOf(100 * 12), 10, BigDecimal.ROUND_HALF_UP);
+        double termMonths = startDate.until(endDate).toTotalMonths();
+        BigDecimal factor = monthlyRate.add(BigDecimal.ONE).pow((int) termMonths);
+        return principalAmount.multiply(monthlyRate)
+                .multiply(factor)
+                .divide(factor.subtract(BigDecimal.ONE), 2, BigDecimal.ROUND_HALF_UP);
+    }
+
+    // Getters/Setters (unchanged, keep existing)
+    public enum LoanStatus { ACTIVE, PAID, OVERDUE, DEFAULTED }
 
     public Long getId() {
         return id;
@@ -90,11 +105,11 @@ public class Loan {
     }
 
     public LocalDate getNextPaymentDate() {
-        return paymentDate;
+        return nextPaymentDate;
     }
 
-    public void setNextPaymentDate(LocalDate paymentDate) {
-        this.paymentDate = paymentDate;
+    public void setNextPaymentDate(LocalDate nextPaymentDate) {
+        this.nextPaymentDate = nextPaymentDate;
     }
 
     public LoanStatus getStatus() {
@@ -121,10 +136,6 @@ public class Loan {
         this.payments = payments;
     }
 
-    public enum LoanStatus {
-        ACTIVE, PAID, OVERDUE, DEFAULTED
-    }
-
     @Override
     public String toString() {
         return "Loan{" +
@@ -133,7 +144,7 @@ public class Loan {
                 ", interestRate=" + interestRate +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +
-                ", paymentDate=" + paymentDate +
+                ", nextPaymentDate=" + nextPaymentDate +
                 ", status=" + status +
                 ", client=" + client +
                 ", payments=" + payments +

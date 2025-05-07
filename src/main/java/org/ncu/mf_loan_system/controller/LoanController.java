@@ -4,6 +4,8 @@ import org.ncu.mf_loan_system.entities.Loan;
 import org.ncu.mf_loan_system.service.LoanService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -29,6 +31,11 @@ public class LoanController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new loan",
+            description = "Requires valid client ID and loan details")
+    @ApiResponse(responseCode = "201", description = "Loan created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid loan data")
+    @ApiResponse(responseCode = "404", description = "Client not found")
     public ResponseEntity<Loan> createLoan(@RequestBody Loan loan) {
         return ResponseEntity.status(201).body(loanService.createLoan(loan));
     }
