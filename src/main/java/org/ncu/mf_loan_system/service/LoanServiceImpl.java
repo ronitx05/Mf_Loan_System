@@ -75,7 +75,7 @@ public class LoanServiceImpl implements LoanService {
     @Override
     public BigDecimal calculateEMI(Long loanId) {
         Loan loan = getLoanById(loanId);
-        return loan.calculateEMI(); // Delegate to entity's method
+        return loan.calculateEMI();
     }
 
     @Override
