@@ -1,6 +1,9 @@
 package org.ncu.mf_loan_system.config;
 
 
+import org.ncu.mf_loan_system.entities.Role;
+import org.ncu.mf_loan_system.repository.RoleRepository;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -50,5 +53,23 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
+    }
+    @Bean
+    public CommandLineRunner initRoles(RoleRepository roleRepository) {
+        return args -> {
+            // Create LOAN_OFFICER role if it doesn't exist
+            if (!roleRepository.existsByName(Role.LOAN_OFFICER)) {
+                Role officerRole = new Role();
+                officerRole.setName(Role.LOAN_OFFICER);
+                roleRepository.save(officerRole);
+            }
+
+            // Create MANAGER role if it doesn't exist
+            if (!roleRepository.existsByName(Role.MANAGER)) {
+                Role managerRole = new Role();
+                managerRole.setName(Role.MANAGER);
+                roleRepository.save(managerRole);
+            }
+        };
     }
 }
