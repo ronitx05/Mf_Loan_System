@@ -3,6 +3,7 @@ package org.ncu.mf_loan_system.controller;
 import org.ncu.mf_loan_system.entities.Payment;
 import org.ncu.mf_loan_system.service.PaymentService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
     public ResponseEntity<Payment> getPaymentById(@PathVariable Long id) {
         return ResponseEntity.ok(paymentService.getPaymentById(id));
     }

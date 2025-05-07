@@ -3,12 +3,14 @@ package org.ncu.mf_loan_system.controller;
 import org.ncu.mf_loan_system.entities.Client;
 import org.ncu.mf_loan_system.service.ClientService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/clients")
+@PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
 public class ClientController {
 
     private final ClientService clientService;

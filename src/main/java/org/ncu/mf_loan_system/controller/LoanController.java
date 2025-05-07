@@ -3,6 +3,7 @@ package org.ncu.mf_loan_system.controller;
 import org.ncu.mf_loan_system.entities.Loan;
 import org.ncu.mf_loan_system.service.LoanService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -24,11 +25,13 @@ public class LoanController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
     public ResponseEntity<Loan> getLoanById(@PathVariable Long id) {
         return ResponseEntity.ok(loanService.getLoanById(id));
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('LOAN_OFFICER')")
     public ResponseEntity<Loan> createLoan(@RequestBody Loan loan) {
         return ResponseEntity.status(201).body(loanService.createLoan(loan));
     }
