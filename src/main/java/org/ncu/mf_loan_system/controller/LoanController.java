@@ -5,6 +5,7 @@ import org.ncu.mf_loan_system.service.LoanService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -42,4 +43,9 @@ public class LoanController {
         loanService.deleteLoan(id);
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/summary/outstanding")
+    public ResponseEntity<BigDecimal> getTotalOutstanding() {
+        return ResponseEntity.ok(loanService.getTotalOutstandingAmount());
+    }
+
 }
