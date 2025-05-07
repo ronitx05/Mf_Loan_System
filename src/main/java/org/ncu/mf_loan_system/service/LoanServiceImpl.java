@@ -1,87 +1,81 @@
 package org.ncu.mf_loan_system.service;
 
-import org.ncu.mf_loan_system.entities.*;
+import org.ncu.mf_loan_system.entities.Client;
+import org.ncu.mf_loan_system.entities.Loan;
+import org.ncu.mf_loan_system.entities.Payment;
+import org.ncu.mf_loan_system.repository.ClientRepository;
 import org.ncu.mf_loan_system.repository.LoanRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 @Service
-@Transactional
 public class LoanServiceImpl implements LoanService {
 
     private final LoanRepository loanRepository;
+    private final ClientRepository clientRepository;
 
-    public LoanServiceImpl(LoanRepository loanRepository) {
+    public LoanServiceImpl(LoanRepository loanRepository, ClientRepository clientRepository) {
         this.loanRepository = loanRepository;
+        this.clientRepository = clientRepository;
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<Loan> getAllLoans() {
         return loanRepository.findAll();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Loan getLoanById(Long id) {
-        Loan loan = loanRepository.findById(id).orElse(null);
-        if (loan == null) {
-            throw new RuntimeException("Loan not found with id: " + id);
-        }
-        return loan;
+        return loanRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Loan not found"));
     }
 
     @Override
     public Loan createLoan(Loan loan) {
-        loan.setStatus(Loan.LoanStatus.ACTIVE);
-        loan.setNextPaymentDate(loan.getStartDate().plusMonths(1));
-        return loanRepository.save(loan);
+        Long clientId = loan.getClient().getId();
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new RuntimeException("Client not found"));
+
+        client.addLoan(loan);
+        clientRepository.save(client);
+        return loan;
     }
 
     @Override
-    public Loan updateLoan(Long id, Loan loan) {
-        Loan existing = getLoanById(id);
-        existing.setPrincipalAmount(loan.getPrincipalAmount());
-        existing.setInterestRate(loan.getInterestRate());
-        existing.setStartDate(loan.getStartDate());
-        existing.setEndDate(loan.getEndDate());
-        return loanRepository.save(existing);
+    public Loan updateLoan(Long id, Loan updatedLoan) {
+        Loan existingLoan = getLoanById(id);
+        existingLoan.setPrincipalAmount(updatedLoan.getPrincipalAmount());
+        existingLoan.setInterestRate(updatedLoan.getInterestRate());
+        existingLoan.setStartDate(updatedLoan.getStartDate());
+        existingLoan.setEndDate(updatedLoan.getEndDate());
+        return loanRepository.save(existingLoan);
     }
 
     @Override
     public void deleteLoan(Long id) {
-        Loan loan = getLoanById(id);
-        loanRepository.delete(loan);
+        loanRepository.deleteById(id);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public BigDecimal getTotalOutstandingAmount() {
-        List<Loan> allLoans = loanRepository.findAll();
-        BigDecimal totalOutstanding = BigDecimal.ZERO;
+        return loanRepository.findAll().stream()
+                .map(loan -> loan.getPrincipalAmount().subtract(getTotalPaidAmount(loan)))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
-        for (Loan loan : allLoans) {
-            BigDecimal loanAmount = loan.getPrincipalAmount();
-            BigDecimal paidAmount = BigDecimal.ZERO;
-
-            for (Payment payment : loan.getPayments()) {
-                paidAmount = paidAmount.add(payment.getAmount());
-            }
-
-            BigDecimal outstanding = loanAmount.subtract(paidAmount);
-            totalOutstanding = totalOutstanding.add(outstanding);
-        }
-
-        return totalOutstanding;
+    private BigDecimal getTotalPaidAmount(Loan loan) {
+        return loan.getPayments().stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @Override
     public BigDecimal calculateEMI(Long loanId) {
         Loan loan = getLoanById(loanId);
-        return loan.calculateEMI();
+        return loan.calculateEMI(); // Delegate to entity's method
     }
 
     @Override
@@ -90,8 +84,14 @@ public class LoanServiceImpl implements LoanService {
         Payment payment = new Payment();
         payment.setAmount(amount);
         payment.setPaymentDate(LocalDate.now());
-        payment.setLoan(loan);
         loan.addPayment(payment);
         loanRepository.save(loan);
+    }
+
+    @Override
+    public List<Loan> getLoansByClientId(Long clientId) {
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new RuntimeException("Client not found"));
+        return client.getLoans();
     }
 }

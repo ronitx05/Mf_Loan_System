@@ -13,4 +13,6 @@ public interface LoanService {
     BigDecimal getTotalOutstandingAmount();
     BigDecimal calculateEMI(Long loanId);
     void processPayment(Long loanId, BigDecimal amount);
+
+    List<Loan> getLoansByClientId(Long clientId);
 }
