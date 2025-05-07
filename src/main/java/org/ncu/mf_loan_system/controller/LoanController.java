@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/loans")
+@PreAuthorize("isAuthenticated()") // Base security for all endpoints
 public class LoanController {
 
     private final LoanService loanService;
@@ -20,12 +21,13 @@ public class LoanController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER', 'AUDITOR')")
     public ResponseEntity<List<Loan>> getAllLoans() {
         return ResponseEntity.ok(loanService.getAllLoans());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER', 'AUDITOR')")
     public ResponseEntity<Loan> getLoanById(@PathVariable Long id) {
         return ResponseEntity.ok(loanService.getLoanById(id));
     }
@@ -37,18 +39,21 @@ public class LoanController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
     public ResponseEntity<Loan> updateLoan(@PathVariable Long id, @RequestBody Loan loan) {
         return ResponseEntity.ok(loanService.updateLoan(id, loan));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<Void> deleteLoan(@PathVariable Long id) {
         loanService.deleteLoan(id);
         return ResponseEntity.noContent().build();
     }
+
     @GetMapping("/summary/outstanding")
+    @PreAuthorize("hasAnyRole('MANAGER', 'AUDITOR')")
     public ResponseEntity<BigDecimal> getTotalOutstanding() {
         return ResponseEntity.ok(loanService.getTotalOutstandingAmount());
     }
-
 }
