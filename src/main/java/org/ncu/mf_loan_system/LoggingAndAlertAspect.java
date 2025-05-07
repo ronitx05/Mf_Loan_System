@@ -1,9 +1,8 @@
 package org.ncu.mf_loan_system;
 
-import org.aspectj.lang.annotation.AfterReturning;
-import org.aspectj.lang.annotation.AfterThrowing;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.*;
+import org.ncu.mf_loan_system.service.LoanServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -11,32 +10,23 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 public class LoggingAndAlertAspect {
-
     private final Logger logger = LoggerFactory.getLogger(LoggingAndAlertAspect.class);
 
-    @Pointcut("execution(* org.ncu.mf_loan_system.service.LoanService.issueLoan(..))")
-    public void loanIssued() {}
-
-    @Pointcut("execution(* org.ncu.mf_loan_system.service.PaymentService.recordPayment(..))")
-    public void paymentRecorded() {}
-
-    @AfterReturning("loanIssued()")
-    public void logLoanIssued() {
-        logger.info("Loan issued successfully.");
+    // Log when a loan is created
+    @AfterReturning(value = "execution(* org.ncu.mf_loan_system.service.LoanService.createLoan(..))")
+    public void logAfterLoanCreated(JoinPoint joinPoint) {
+        logger.info("New loan issued: " + joinPoint.getArgs()[0]);
     }
 
-    @AfterReturning("paymentRecorded()")
-    public void logPaymentRecordedAndCheckOverdue() {
-        logger.info("Payment recorded successfully.");
-
-        boolean isOverdue = true;
-        if (isOverdue) {
-            logger.warn("Alert: Overdue loan detected with remaining balance.");
-        }
+    // Log after a payment is recorded
+    @AfterReturning(value = "execution(* org.ncu.mf_loan_system.service.PaymentService.createPayment(..))")
+    public void logAfterPaymentCreated(JoinPoint joinPoint) {
+        logger.info("New payment recorded: " + joinPoint.getArgs()[0]);
     }
 
-    @AfterThrowing(pointcut = "loanIssued() || paymentRecorded()", throwing = "ex")
-    public void logErrors(Exception ex) {
-        logger.error("Error occurred during loan or payment operation: {}", ex.getMessage());
+    // Log errors
+    @AfterThrowing(pointcut = "execution(* org.ncu.mf_loan_system.service..*(..))", throwing = "ex")
+    public void logExceptions(JoinPoint joinPoint, Exception ex) {
+        logger.error("Exception in method: " + joinPoint.getSignature().getName(), ex);
     }
 }
