@@ -1,6 +1,5 @@
 package org.ncu.mf_loan_system.controller;
 
-
 import org.ncu.mf_loan_system.config.JwtTokenUtil;
 import org.ncu.mf_loan_system.entities.Role;
 import org.ncu.mf_loan_system.entities.User;
@@ -43,8 +42,8 @@ public class AuthController {
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()));
+                        loginRequest.username(),
+                        loginRequest.password()));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -55,14 +54,14 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody SignupRequest signUpRequest) {
-        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+        if (userRepository.existsByUsername(signUpRequest.username())) {
             return ResponseEntity.badRequest().body("Error: Username is already taken!");
         }
 
         // Create new user
         User user = new User();
-        user.setUsername(signUpRequest.getUsername());
-        user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
+        user.setUsername(signUpRequest.username());
+        user.setPassword(passwordEncoder.encode(signUpRequest.password()));
 
         // Assign role
         Role userRole = roleRepository.findByName(Role.LOAN_OFFICER)
@@ -78,62 +77,8 @@ public class AuthController {
         return ResponseEntity.ok("User registered successfully!");
     }
 
-    // Inner classes for request/response
-    static class LoginRequest {
-        private String username;
-        private String password;
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public Object getPassword() {
-            return null;
-        }
-        // getters and setters
-    }
-
-    static class SignupRequest {
-
-        private String username;
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        private String password;
-
-        public String getUsername() {
-            return "";
-        }
-        // getters and setters
-    }
-
-    static class JwtResponse {
-        private String token;
-
-        public JwtResponse(String token) {
-            this.token = token;
-        }
-
-        public String getToken() {
-            return token;
-        }
-    }
+    // Using Java records for immutable data transfer objects
+    private record LoginRequest(String username, String password) {}
+    private record SignupRequest(String username, String password) {}
+    private record JwtResponse(String token) {}
 }
