@@ -32,6 +32,12 @@ public class LoanController {
         return ResponseEntity.ok(loanService.getLoanById(id));
     }
 
+    @GetMapping("/client/{clientId}")
+//    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER', 'AUDITOR')")
+    public ResponseEntity<List<Loan>> getLoansByClient(@PathVariable Long clientId) {
+        return ResponseEntity.ok(loanService.getLoansByClientId(clientId));
+    }
+
     @PostMapping
 //    @PreAuthorize("hasRole('LOAN_OFFICER')")
     public ResponseEntity<Loan> createLoan(@RequestBody Loan loan) {
@@ -53,8 +59,8 @@ public class LoanController {
 
     @GetMapping("/summary/outstanding")
 //    @PreAuthorize("hasAnyRole('MANAGER', 'AUDITOR')")
-    public ResponseEntity<BigDecimal> getTotalOutstanding() {
-        return ResponseEntity.ok(loanService.getTotalOutstandingAmount());
+    public ResponseEntity<BigDecimal> getOutstandingBalance(@PathVariable Long id) {
+        return ResponseEntity.ok(loanService.getOutstandingBalance(id));
     }
 
     @GetMapping("/{id}/emi")
@@ -70,5 +76,10 @@ public class LoanController {
             @RequestParam BigDecimal amount) {
         loanService.processPayment(id, amount);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/overdue")
+    public ResponseEntity<List<Loan>> getOverdueLoans() {
+        return ResponseEntity.ok(loanService.getOverdueLoans());
     }
 }

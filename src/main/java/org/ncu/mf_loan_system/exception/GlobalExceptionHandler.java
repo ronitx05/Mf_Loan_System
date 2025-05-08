@@ -35,4 +35,12 @@ public class GlobalExceptionHandler {
         body.put("details", ex.getMessage());
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Object> handleIllegalState(IllegalStateException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "Business rule violation");
+        body.put("message", ex.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
 }

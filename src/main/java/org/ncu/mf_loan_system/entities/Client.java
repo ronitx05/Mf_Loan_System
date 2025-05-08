@@ -1,5 +1,6 @@
 package org.ncu.mf_loan_system.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -8,6 +9,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "clients")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Client {
 
     @Id
