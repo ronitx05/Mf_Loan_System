@@ -40,9 +40,6 @@ public class Loan {
     @Column
     private LocalDate nextPaymentDate;
 
-    @Column
-    private BigDecimal outstandingAmount;
-
     @Enumerated(EnumType.STRING)
     private LoanStatus status = LoanStatus.ACTIVE;
 
@@ -59,10 +56,8 @@ public class Loan {
     @PreUpdate
     private void calculateInitialValues() {
         if (this.startDate != null && this.endDate != null && this.nextPaymentDate == null) {
-            // Set first payment date as 1 month from start date
             this.nextPaymentDate = this.startDate.plusMonths(1);
         }
-        this.outstandingAmount = this.principalAmount;
     }
 
     public BigDecimal calculateEMI() {
@@ -81,128 +76,23 @@ public class Loan {
                 .divide(factor.subtract(BigDecimal.ONE), 2, RoundingMode.HALF_UP);
     }
 
-    public void processPayment(BigDecimal amount) {
-        if (this.outstandingAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("Loan is already paid off");
-        }
-
-        Payment payment = new Payment();
-        payment.setAmount(amount);
-        payment.setPaymentDate(LocalDate.now());
-        payment.setLoan(this);
-        this.payments.add(payment);
-
-        // Update outstanding amount
-        this.outstandingAmount = this.outstandingAmount.subtract(amount);
-
-        // Update next payment date (1 month from last payment)
-        this.nextPaymentDate = LocalDate.now().plusMonths(1);
-
-        // Update status
-        if (this.outstandingAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            this.status = LoanStatus.PAID;
-            this.nextPaymentDate = null;
-        } else if (LocalDate.now().isAfter(this.endDate)) {
-            this.status = LoanStatus.OVERDUE;
-        }
-    }
-
-    // Getters and setters
-
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public BigDecimal getPrincipalAmount() {
-        return principalAmount;
-    }
-
-    public void setPrincipalAmount(BigDecimal principalAmount) {
-        this.principalAmount = principalAmount;
-    }
-
-    public BigDecimal getInterestRate() {
-        return interestRate;
-    }
-
-    public void setInterestRate(BigDecimal interestRate) {
-        this.interestRate = interestRate;
-    }
-
-    public LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDate getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
-    }
-
-    public LocalDate getNextPaymentDate() {
-        return nextPaymentDate;
-    }
-
-    public void setNextPaymentDate(LocalDate nextPaymentDate) {
-        this.nextPaymentDate = nextPaymentDate;
-    }
-
-    public BigDecimal getOutstandingAmount() {
-        return outstandingAmount;
-    }
-
-    public void setOutstandingAmount(BigDecimal outstandingAmount) {
-        this.outstandingAmount = outstandingAmount;
-    }
-
-    public LoanStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(LoanStatus status) {
-        this.status = status;
-    }
-
-    public Client getClient() {
-        return client;
-    }
-
-    public void setClient(Client client) {
-        this.client = client;
-    }
-
-    public List<Payment> getPayments() {
-        return payments;
-    }
-
-    public void setPayments(List<Payment> payments) {
-        this.payments = payments;
-    }
-
-    @Override
-    public String toString() {
-        return "Loan{" +
-                "id=" + id +
-                ", principalAmount=" + principalAmount +
-                ", interestRate=" + interestRate +
-                ", startDate=" + startDate +
-                ", endDate=" + endDate +
-                ", nextPaymentDate=" + nextPaymentDate +
-                ", outstandingAmount=" + outstandingAmount +
-                ", status=" + status +
-                ", client=" + client +
-                ", payments=" + payments +
-                '}';
-    }
+    // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public BigDecimal getPrincipalAmount() { return principalAmount; }
+    public void setPrincipalAmount(BigDecimal principalAmount) { this.principalAmount = principalAmount; }
+    public BigDecimal getInterestRate() { return interestRate; }
+    public void setInterestRate(BigDecimal interestRate) { this.interestRate = interestRate; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public LocalDate getNextPaymentDate() { return nextPaymentDate; }
+    public void setNextPaymentDate(LocalDate nextPaymentDate) { this.nextPaymentDate = nextPaymentDate; }
+    public LoanStatus getStatus() { return status; }
+    public void setStatus(LoanStatus status) { this.status = status; }
+    public Client getClient() { return client; }
+    public void setClient(Client client) { this.client = client; }
+    public List<Payment> getPayments() { return payments; }
+    public void setPayments(List<Payment> payments) { this.payments = payments; }
 }

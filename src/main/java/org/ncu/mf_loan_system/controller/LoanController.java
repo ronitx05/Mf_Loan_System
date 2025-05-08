@@ -57,7 +57,7 @@ public class LoanController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/summary/outstanding")
+    @GetMapping("/summary/outstanding/{id}")
 //    @PreAuthorize("hasAnyRole('MANAGER', 'AUDITOR')")
     public ResponseEntity<BigDecimal> getOutstandingBalance(@PathVariable Long id) {
         return ResponseEntity.ok(loanService.getOutstandingBalance(id));

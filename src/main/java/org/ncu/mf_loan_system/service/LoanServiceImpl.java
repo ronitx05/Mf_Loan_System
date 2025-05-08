@@ -85,13 +85,11 @@ public class LoanServiceImpl implements LoanService {
     public BigDecimal getTotalOutstandingAmount() {
         logger.info("Calculating total outstanding amount");
         return loanRepository.findAll().stream()
-                .map(loan -> loan.getPrincipalAmount().subtract(getTotalPaidAmount(loan)))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private BigDecimal getTotalPaidAmount(Loan loan) {
-        return loan.getPayments().stream()
-                .map(Payment::getAmount)
+                .map(loan -> loan.getPrincipalAmount().subtract(
+                        loan.getPayments().stream()
+                                .map(Payment::getAmount)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                ))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -117,7 +115,24 @@ public class LoanServiceImpl implements LoanService {
             throw new LoanAlreadyPaidException("Cannot process payment - loan is already paid");
         }
 
-        loan.processPayment(amount);
+        Payment payment = new Payment();
+        payment.setAmount(amount);
+        payment.setPaymentDate(LocalDate.now());
+        payment.setLoan(loan);
+        loan.getPayments().add(payment);
+
+        // Update loan status and next payment date
+        BigDecimal totalPaid = loan.getPayments().stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalPaid.compareTo(loan.getPrincipalAmount()) >= 0) {
+            loan.setStatus(Loan.LoanStatus.PAID);
+            loan.setNextPaymentDate(null);
+        } else {
+            loan.setNextPaymentDate(LocalDate.now().plusMonths(1));
+        }
+
         loanRepository.save(loan);
     }
 
@@ -125,9 +140,11 @@ public class LoanServiceImpl implements LoanService {
     @Transactional(readOnly = true)
     public BigDecimal getOutstandingBalance(Long loanId) {
         logger.info("Getting outstanding balance for loan id: {}", loanId);
-        return loanRepository.findById(loanId)
-                .map(Loan::getOutstandingAmount)
-                .orElseThrow(() -> new LoanNotFoundException("Loan not found with id: " + loanId));
+        Loan loan = getLoanById(loanId);
+        BigDecimal totalPaid = loan.getPayments().stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return loan.getPrincipalAmount().subtract(totalPaid);
     }
 
     @Override
