@@ -3,7 +3,7 @@ package org.ncu.mf_loan_system.controller;
 import org.ncu.mf_loan_system.entities.Loan;
 import org.ncu.mf_loan_system.service.LoanService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+//import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
