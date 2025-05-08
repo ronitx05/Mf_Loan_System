@@ -1,9 +1,14 @@
 package org.ncu.mf_loan_system.service;
 
+import org.ncu.mf_loan_system.entities.Loan;
 import org.ncu.mf_loan_system.entities.Payment;
+import org.ncu.mf_loan_system.repository.LoanRepository;
 import org.ncu.mf_loan_system.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -11,9 +16,11 @@ import java.util.List;
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final LoanRepository loanRepository;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, LoanRepository loanRepository) {
         this.paymentRepository = paymentRepository;
+        this.loanRepository = loanRepository;
     }
 
     @Override
@@ -31,7 +38,35 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Payment createPayment(Payment payment) {
-        return paymentRepository.save(payment);
+        // Find the loan from DB
+        Loan loan = loanRepository.findById(payment.getLoan().getId())
+                .orElseThrow(() -> new RuntimeException("Loan not found with id: " + payment.getLoan().getId()));
+
+        // Save the payment
+        payment.setLoan(loan);
+        Payment savedPayment = paymentRepository.save(payment);
+
+        // Add payment to loan's payment list
+        loan.getPayments().add(savedPayment);
+
+        // Calculate total paid so far
+        BigDecimal totalPaid = loan.getPayments().stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Calculate total due (principal + interest)
+        BigDecimal interestAmount = loan.getPrincipalAmount()
+                .multiply(loan.getInterestRate())
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal totalDue = loan.getPrincipalAmount().add(interestAmount);
+
+        // If fully paid, update status
+        if (totalPaid.compareTo(totalDue) >= 0) {
+            loan.setStatus(Loan.LoanStatus.PAID);
+            loanRepository.save(loan); // update loan status
+        }
+
+        return savedPayment;
     }
 
     @Override

@@ -31,7 +31,12 @@ public class LoanController {
     public ResponseEntity<Loan> getLoanById(@PathVariable Long id) {
         return ResponseEntity.ok(loanService.getLoanById(id));
     }
-
+    // LoanController.java
+    @GetMapping("/{id}/status")
+    public ResponseEntity<String> getLoanStatus(@PathVariable Long id) {
+        Loan loan = loanService.getLoanById(id);
+        return ResponseEntity.ok(loan.getStatus().toString());
+    }
     @GetMapping("/client/{clientId}")
 //    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER', 'AUDITOR')")
     public ResponseEntity<List<Loan>> getLoansByClient(@PathVariable Long clientId) {

@@ -3,6 +3,7 @@ package org.ncu.mf_loan_system.entities;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -48,6 +49,7 @@ public class Loan {
     private Client client;
 
     @OneToMany(mappedBy = "loan", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Payment> payments = new ArrayList<>();
 
     public enum LoanStatus { ACTIVE, PAID, OVERDUE, DEFAULTED }
@@ -57,6 +59,27 @@ public class Loan {
     private void calculateInitialValues() {
         if (this.startDate != null && this.endDate != null && this.nextPaymentDate == null) {
             this.nextPaymentDate = this.startDate.plusMonths(1);
+        }
+    }
+
+    @Transient
+    public boolean isFullyPaid() {
+        BigDecimal totalPaid = payments.stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal interestAmount = principalAmount
+                .multiply(interestRate)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+        BigDecimal totalDue = principalAmount.add(interestAmount);
+
+        return totalPaid.compareTo(totalDue) >= 0;
+    }
+
+    public void updateStatusBasedOnPayments() {
+        if (isFullyPaid()) {
+            this.status = LoanStatus.PAID;
         }
     }
 
