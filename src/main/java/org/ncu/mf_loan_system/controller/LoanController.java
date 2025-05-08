@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/loans")
-@PreAuthorize("isAuthenticated()")
+//@PreAuthorize("isAuthenticated()")
 public class LoanController {
 
     private final LoanService loanService;
@@ -21,50 +21,50 @@ public class LoanController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER', 'AUDITOR')")
+//    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER', 'AUDITOR')")
     public ResponseEntity<List<Loan>> getAllLoans() {
         return ResponseEntity.ok(loanService.getAllLoans());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER', 'AUDITOR')")
+//    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER', 'AUDITOR')")
     public ResponseEntity<Loan> getLoanById(@PathVariable Long id) {
         return ResponseEntity.ok(loanService.getLoanById(id));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('LOAN_OFFICER')")
+//    @PreAuthorize("hasRole('LOAN_OFFICER')")
     public ResponseEntity<Loan> createLoan(@RequestBody Loan loan) {
         return ResponseEntity.status(201).body(loanService.createLoan(loan));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
+//    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
     public ResponseEntity<Loan> updateLoan(@PathVariable Long id, @RequestBody Loan loan) {
         return ResponseEntity.ok(loanService.updateLoan(id, loan));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('MANAGER')")
+//    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<Void> deleteLoan(@PathVariable Long id) {
         loanService.deleteLoan(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/summary/outstanding")
-    @PreAuthorize("hasAnyRole('MANAGER', 'AUDITOR')")
+//    @PreAuthorize("hasAnyRole('MANAGER', 'AUDITOR')")
     public ResponseEntity<BigDecimal> getTotalOutstanding() {
         return ResponseEntity.ok(loanService.getTotalOutstandingAmount());
     }
 
     @GetMapping("/{id}/emi")
-    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
+//    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
     public ResponseEntity<BigDecimal> calculateLoanEMI(@PathVariable Long id) {
         return ResponseEntity.ok(loanService.calculateEMI(id));
     }
 
     @PostMapping("/{id}/payments")
-    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
+//    @PreAuthorize("hasAnyRole('LOAN_OFFICER', 'MANAGER')")
     public ResponseEntity<Void> processPayment(
             @PathVariable Long id,
             @RequestParam BigDecimal amount) {
